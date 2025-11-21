@@ -9,9 +9,9 @@ import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import HeaderCard from "./components/header";
 
-const apiKey = import.meta.env.STREAM_API_KEY;
-const token = import.meta.env.STREAM_TOKEN;
-const callId = import.meta.env.STREAM_CALL_ID;
+const apiKey = import.meta.env.VITE_STREAM_API_KEY;
+const token = import.meta.env.VITE_STREAM_TOKEN;
+const callId = import.meta.env.VITE_STREAM_CALL_ID;
 const user: User = { type: "anonymous" };
 const client = new StreamVideoClient({ apiKey, user, token });
 
