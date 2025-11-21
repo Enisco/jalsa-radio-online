@@ -9,10 +9,9 @@ import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import HeaderCard from "./components/header";
 
-const apiKey = "qkq9wk3je9x2";
-const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJAc3RyZWFtLWlvL2Rhc2hib2FyZCIsImlhdCI6MTc2MzU2OTY3MSwiZXhwIjoxNzYzNjU2MDcxLCJ1c2VyX2lkIjoiIWFub24iLCJyb2xlIjoidmlld2VyIiwiY2FsbF9jaWRzIjpbImxpdmVzdHJlYW06bGl2ZXN0cmVhbV80NGJiYzhjMi04MGY3LTQwMDQtYjFjMy00NTBlODQ5M2Y3ZTgiXX0._sFaP3e4QSzq_0TKYxJogVz16QWSIiKD0JZ9hy4lsr4";
-const callId = "livestream_44bbc8c2-80f7-4004-b1c3-450e8493f7e8";
+const apiKey = import.meta.env.STREAM_API_KEY;
+const token = import.meta.env.STREAM_TOKEN;
+const callId = import.meta.env.STREAM_CALL_ID;
 const user: User = { type: "anonymous" };
 const client = new StreamVideoClient({ apiKey, user, token });
 

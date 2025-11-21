@@ -3,7 +3,7 @@ import jalsaMainLogo from "../assets/Jalsa_salana_logo.png";
 export default function HeaderCard() {
   const websiteTitle = "Jalsa Radio";
   const websiteSubitle =
-    "...bringing the Jalsa experience to you LIVE, anywhere in the world";
+    "...bringing the Jalsa Nigeria experience to you LIVE, anywhere in the world";
 
   return (
     <header className="main-header">
