@@ -18,6 +18,7 @@ const client = new StreamVideoClient({ apiKey, user, token });
 function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLive, setIsLive] = useState(false);
+  const [hasAudio, setHasAudio] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -35,6 +36,7 @@ function App() {
         audioContextRef.current = null;
         analyserRef.current = null;
       }
+      setHasAudio(false);
       return;
     }
 
@@ -62,8 +64,7 @@ function App() {
           source.connect(analyserRef.current);
 
           animateWaveBars();
-        } catch (err) {
-        }
+        } catch (err) {}
       }
     };
 
@@ -99,6 +100,13 @@ function App() {
     // Calculate average volume
     const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
 
+    // Check if there's audio
+    if (average > 5) {
+      setHasAudio(true);
+    } else {
+      setHasAudio(false);
+    }
+
     // Update wave bars
     const waveBars = document.querySelectorAll(".waveform span");
     waveBars.forEach((bar, index) => {
@@ -115,10 +123,18 @@ function App() {
     <>
       <HeaderCard />
       <main className="main-content">
-        {isLive && isPlaying && <div className="live-pill">🔴 LIVE</div>}
+        {isPlaying && !isLive && (
+          <div className="live-pill connecting">Connecting to radio...</div>
+        )}
+        {isLive && isPlaying && !hasAudio && (
+          <div className="live-pill no-audio">Waiting for audio...</div>
+        )}
+        {isLive && isPlaying && hasAudio && (
+          <div className="live-pill">🔴 LIVE</div>
+        )}
 
         <div className="audio-player-container">
-          <div className={`waveform ${isPlaying ? "playing" : ""}`}>
+          <div className={`waveform ${hasAudio ? "playing" : ""}`}>
             <span></span>
             <span></span>
             <span></span>
