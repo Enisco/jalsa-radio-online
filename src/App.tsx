@@ -22,6 +22,7 @@ function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const wakeLockRef = useRef<any>(null);
 
   // To monitor for audio elements and set up visualization
   useEffect(() => {
@@ -36,9 +37,17 @@ function App() {
         audioContextRef.current = null;
         analyserRef.current = null;
       }
+      // Release wake lock when stopping
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release();
+        wakeLockRef.current = null;
+      }
       setHasAudio(false);
       return;
     }
+
+    // Request wake lock to keep screen active
+    requestWakeLock();
 
     const setupAudioVisualization = () => {
       const audioElement = document.querySelector("audio") as HTMLAudioElement;
@@ -89,6 +98,109 @@ function App() {
       return () => clearInterval(interval);
     }
   }, [isPlaying]);
+
+  // Handle visibility change to resume audio context
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page is hidden/backgrounded
+        if (audioContextRef.current && audioContextRef.current.state === 'running') {
+          // Keep audio context running
+          console.log('App backgrounded, audio continues');
+        }
+      } else {
+        // Page is visible again
+        if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+          audioContextRef.current.resume();
+        }
+        // Re-request wake lock when page becomes visible
+        if (isPlaying && !wakeLockRef.current) {
+          requestWakeLock();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isPlaying]);
+
+  // Setup Media Session API for background audio and lock screen controls
+  useEffect(() => {
+    if (!isPlaying) {
+      // Clear media session when stopped
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = null;
+        navigator.mediaSession.playbackState = 'none';
+      }
+      return;
+    }
+
+    if ('mediaSession' in navigator) {
+      // Set metadata for lock screen/notification
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: 'Live Radio Stream',
+        artist: 'Your Radio Station',
+        album: 'Live Broadcast',
+        artwork: [
+          { src: '/icon-96x96.png', sizes: '96x96', type: 'image/png' },
+          { src: '/icon-128x128.png', sizes: '128x128', type: 'image/png' },
+          { src: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-256x256.png', sizes: '256x256', type: 'image/png' },
+          { src: '/icon-384x384.png', sizes: '384x384', type: 'image/png' },
+          { src: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+        ],
+      });
+
+      // Set playback state
+      navigator.mediaSession.playbackState = 'playing';
+
+      // Setup action handlers for media controls
+      navigator.mediaSession.setActionHandler('play', () => {
+        setIsPlaying(true);
+      });
+
+      navigator.mediaSession.setActionHandler('pause', () => {
+        setIsPlaying(false);
+      });
+
+      navigator.mediaSession.setActionHandler('stop', () => {
+        setIsPlaying(false);
+      });
+
+      // Prevent seeking for live streams
+      navigator.mediaSession.setActionHandler('seekbackward', null);
+      navigator.mediaSession.setActionHandler('seekforward', null);
+      navigator.mediaSession.setActionHandler('seekto', null);
+    }
+
+    return () => {
+      if ('mediaSession' in navigator) {
+        // Clear all action handlers
+        navigator.mediaSession.setActionHandler('play', null);
+        navigator.mediaSession.setActionHandler('pause', null);
+        navigator.mediaSession.setActionHandler('stop', null);
+      }
+    };
+  }, [isPlaying]);
+
+  // Request wake lock to prevent screen from sleeping
+  const requestWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+        console.log('Wake lock acquired');
+        
+        wakeLockRef.current.addEventListener('release', () => {
+          console.log('Wake lock released');
+        });
+      }
+    } catch (err) {
+      console.log('Wake lock error:', err);
+    }
+  };
 
   // Animate wave bars based on audio
   const animateWaveBars = () => {
